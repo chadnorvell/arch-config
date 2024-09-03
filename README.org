@@ -1,0 +1,63 @@
+#+TITLE: Arch Linux Configuration
+
+* Full-disk encryption
+
+** TPM enrollment
+
+We can enroll a token in the TPM that will automatically unlock the drive on boot, as long as the TPM is confident that the hardware and firmware haven't been tampered with. This saves us the considerable labor of entering the encrypted disk password on boot.
+
+Generate a recovery key: =sudo systemd-cryptenroll /dev/nvme0n1p2 --recovery-key=
+
+Enroll a TPM token: =sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=0+7 /dev/nvme0n1p2=
+
+*** Updating the TPM token
+
+A firmware update can change the system state enough that the encrypted drive will no longer be opened automatically (someone may have tampered!). We can resolve this by first wiping the key data from the TPM: =systemd-cryptenroll --wipe-slot=tpm2 /dev/nvme0n1p2 --tpm2-pcrs=0+7=
+
+Then re-enroll a new token.
+
+** Firmware updates
+
+Our Secure Boot config will only boot UEFI images that are signed. =fwupd= normally handles this using =shim= to create a multi-stage bootload sequence, but that only works with GRUB.
+
+Instead, we sign the boot image that =fwupd= uses to install firmware updates. That image is provided by the =fwupd-efi= package, and this =pacman= hook ensures it gets signed whenever it's updated. Put this in =/etc/pacman.d/hooks/sign-fwupd-secureboot.hook=:
+
+#+BEGIN_SRC
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Path
+Target = /usr/lib/fwupd/efi/fwupdx64.efi
+
+[Action]
+When = PostTransaction
+Exec = /usr/bin/sbctl sign /usr/lib/fwupd/efi/fwupdx64.efi -o /usr/lib/fwupd/efi/fwupdx64.efi.signed
+Depends = sbctl
+#+END_SRC
+
+Now =fwupd= needs to be told not to worry about the fact that Secure Boot is enabled and =shim= is missing. Add this to =/etc/fwupd/fwupd.conf=:
+
+#+BEGIN_SRC
+[uefi_capsule]
+DisableShimForSecureBoot=true
+#+END_SRC
+
+* Devices
+
+** Laptop keyboard key remapping
+
+I use =evremap= to make the laptop keymap better match the keymap I use on my hardware keyboards. Just do:
+
+- =ln -s $HOME/.config/etc/evremap.toml /etc/evremap.toml=
+- =sudo systemctl enable --now evremap.service=
+
+* KDE
+
+** KWallet
+
+KDE likes to store secret-like things in a wallet, and other apps often expect there to be a wallet-like service available. Arguably, encrypting this data in a wallet is redundant since we're already using full-disk encryption. But it still feels wrong to instead store the data as plain text.
+
+Recreate the default wallet using Blowfish since that's the only option Chrome and =kwallet-pam= support. The wallet has to be named =kdewallet= for automatic unlocking to work, so it will probably be necessary to delete an existing wallet with that name.  Wallets are stored in =~/.local/share/kwalletd=.
+
+Then install =kwallet-pam= to unlock the wallet on login. When using SDDM, no further configuration is required for this to work.
+

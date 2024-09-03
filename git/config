@@ -1,0 +1,9 @@
+[user]
+	name = Chad Norvell
+	email = chadxnor@gmail.com
+[init]
+	defaultBranch = main
+[core]
+	editor = vim
+[alias]
+	squash-all = "!f() { git reset $(git commit-tree HEAD^{tree} \"$@\"); }; f"

@@ -1,0 +1,27 @@
+# Built-in laptop keyboards usually go by this name.
+device_name = "AT Translated Set 2 keyboard"
+
+[[dual_role]]
+input = "KEY_CAPSLOCK"
+hold = ["KEY_LEFTCTRL"]
+tap = ["KEY_ESC"]
+
+[[dual_role]]
+input = "KEY_TAB"
+hold = ["KEY_LEFTCTRL", "KEY_LEFTALT", "KEY_LEFTSHIFT"]
+tap = ["KEY_TAB"]
+
+[[dual_role]]
+input = "KEY_RIGHTALT"
+hold = ["KEY_RIGHTALT"]
+tap = ["KEY_BACKSPACE"]
+
+[[dual_role]]
+input = "KEY_LEFTSHIFT"
+hold = ["KEY_LEFTSHIFT"]
+tap = ["KEY_KPLEFTPAREN"]
+
+[[dual_role]]
+input = "KEY_RIGHTSHIFT"
+hold = ["KEY_RIGHTSHIFT"]
+tap = ["KEY_KPRIGHTPAREN"]
